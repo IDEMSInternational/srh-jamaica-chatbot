@@ -4,10 +4,10 @@ $spreadsheet_IDS = @("1yett-Rfzb9Ou8IQ1kwtrKPN_auhM-lk66r9gkqNV1As","19xvYfwWKA1
 
 for ($i=0; $i -lt $source_files.length; $i++) {
 
-    Set-Location "..\rapidpro-flow-toolkit"
-    $output_flow_path = "..\srh-jamaica-chatbot\flows\" + $source_file_name + ".json"
+    # Set-Location "..\rapidpro-flow-toolkit"
+    # $output_flow_path = "..\srh-jamaica-chatbot\flows\" + $source_file_name + ".json"
 
-    python main.py create_flows $spreadsheet_IDS[$i] $output_flow_path --format=google_sheets --datamodels=tests.input.srh_chatbot.srh_models
+    # python main.py create_flows $spreadsheet_IDS[$i] $output_flow_path --format=google_sheets --datamodels=tests.input.srh_chatbot.srh_models
     Set-Location "..\srh-jamaica-chatbot"
 
     $source_file_name = $source_files[$i]
