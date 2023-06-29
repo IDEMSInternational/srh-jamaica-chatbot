@@ -125,5 +125,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# Comiled pyc files
+# Python
+.venv/
 *.pyc
