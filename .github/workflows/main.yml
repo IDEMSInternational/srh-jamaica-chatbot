@@ -1,0 +1,32 @@
+name: Produce RapidPro Flows
+on:
+  workflow_dispatch:
+
+jobs:
+
+  core-function:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install node dependencies
+        run: npm ci
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  
+
+      - name: Run Python function
+        env:
+          CREDENTIALS: ${{ secrets.CREDENTIALS }}
+          TOKEN: ${{ secrets.TOKEN }}
+        run: python srh_jamaica.py
+
+      - name: Publish output folder
+        uses: actions/upload-artifact@v2
+        with:
+          name: Output Files
+          path: output
