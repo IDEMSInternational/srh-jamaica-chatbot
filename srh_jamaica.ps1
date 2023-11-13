@@ -4,17 +4,27 @@ python main.py create_flows "1yett-Rfzb9Ou8IQ1kwtrKPN_auhM-lk66r9gkqNV1As"-o "..
 python main.py create_flows "1A_p3cb3KNgX8XxD9MlCIoa294Y4Pb9obUKfwIvERALY"-o "..\srh-jamaica-chatbot\flows\srh_safeguarding.json" --format=google_sheets --datamodels=tests.input.srh_chatbot.srh_models
 #>
 
-
-$source_files = @("srh_registration","srh_entry","srh_content_answer","srh_content_navigation","srh_content","srh_safeguarding")
+# $source_files = @("srh_registration","srh_entry","srh_content_answer","srh_content_navigation","srh_content","srh_safeguarding")
+$source_files = @("srh_registration","srh_entry","srh_content","srh_safeguarding")
+$spreadsheet_IDS = @("1yett-Rfzb9Ou8IQ1kwtrKPN_auhM-lk66r9gkqNV1As","19xvYfwWKA1hT5filGPWYEobQL1ZFfcFbTj1-aJCN8OQ","1hOlgdqjmXZgl51L1olt357Gfiw2zRHNEl98aYTf8Hwo","1A_p3cb3KNgX8XxD9MlCIoa294Y4Pb9obUKfwIvERALY")
 
 
 for ($i=0; $i -lt $source_files.length; $i++) {
 
+    Set-Location "..\srh-jamaica-chatbot"
+
     $source_file_name = $source_files[$i]
-    Write-Output $source_file_name 
+
+    Set-Location "..\rapidpro-flow-toolkit"
+    $output_flow_path = "..\srh-jamaica-chatbot\flows\" + $source_file_name + ".json"
+
+    python main.py create_flows $spreadsheet_IDS[$i] $output_flow_path --format=google_sheets --datamodels=tests.input.srh_chatbot.srh_models
+    Set-Location "..\srh-jamaica-chatbot"    
+
+    Write-Output ("created" + $source_file_name)
     $input_path = ".\flows\" + $source_file_name +".json"
 
- 
+
     # step 2: flow edits & A/B testing
     
     $SPREADSHEET_ID = '1SDUUCbDL1-oW7b9pB2RqfM6HqB-jeLDAdT3Ng6e515I'
@@ -61,7 +71,7 @@ for ($i=0; $i -lt $source_files.length; $i++) {
         Write-Output "Edited redirect sg flow"
     }
 
-    # step final: split in 2 json files because it's too heavy to load (need to replace wrong flow names)
+#     # step final: split in 2 json files because it's too heavy to load (need to replace wrong flow names)
     if($source_file_name -match 'srh_content'  ){
         $input_path_6 = $output_path_5 
         $n_file = 2
@@ -71,5 +81,3 @@ for ($i=0; $i -lt $source_files.length; $i++) {
     }
 Write-Output (" -------------------- ")
 }
-
-
