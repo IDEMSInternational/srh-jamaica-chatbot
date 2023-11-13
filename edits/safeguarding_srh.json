@@ -804,8 +804,7 @@
           "frighten"
         ],
         "mispellings": [
-          "fer",
-          "fire"
+          "fer"
         ]
       },
       "Translation": {}
@@ -2061,8 +2060,10 @@
     {
       "English": {
         "keywords": [
-          "register",
-          "registration"
+		"yute",		
+		"register_yute",
+          "registration_yute",
+          "register_yut"
         ],
         "mispellings": []
       },
