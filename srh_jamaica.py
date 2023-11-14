@@ -34,14 +34,22 @@ def srh_jamaica_pipeline():
     redirect_flow_names = "[" '    "SRH - Safeguarding - Redirect to topic"' "]"
 
     sources = [
-        # {
-        #     "filename": "srh_registration",
-        #     "spreadsheet_ids": [
-        #         srh_registration_ID
-        #     ],
-        #     "tags": [],
-        #     "outputlog": False
-        # },
+        {
+            "filename": "srh_safeguarding",
+            "spreadsheet_ids": [
+                srh_safeguarding_ID
+            ],
+             "tags": [],
+             "outputlog": False
+         },
+         {
+            "filename": "srh_registration",
+            "spreadsheet_ids": [
+                srh_registration_ID
+            ],
+             "tags": [],
+             "outputlog": False
+         },
         {
             "filename": "srh_entry",
             "spreadsheet_ids": [srh_entry_ID, srh_safeguarding_ID],
