@@ -21,8 +21,8 @@ def srh_jamaica_pipeline():
 
     ab_testing_sheet_id = "1SDUUCbDL1-oW7b9pB2RqfM6HqB-jeLDAdT3Ng6e515I"
 
-    select_phrases = ".\edits\select_phrases.json"
-    special_words = ".\edits\special_words.json"
+    select_phrases = "./edits/select_phrases.json"
+    special_words = "./edits/special_words.json"
     count_threshold = "2"
     length_threshold = "18"
     qr_limit = "10"
