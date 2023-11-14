@@ -1,80 +1,282 @@
 import os
+import json
 import subprocess
-import sys
-from rapidpro_flow_tools import flow_converter
+import tempfile
+import shutil
 
-def main(credentials = None, token = None):
+from rpft.converters import create_flows
+from rapidpro_abtesting.main import apply_abtests
+
+def srh_jamaica_pipeline():
+
+    srh_registration_ID = "1yett-Rfzb9Ou8IQ1kwtrKPN_auhM-lk66r9gkqNV1As"
+    srh_entry_ID = "19xvYfwWKA1hT5filGPWYEobQL1ZFfcFbTj1-aJCN8OQ"
+    srh_content_ID = "1Tcg02_EW3GltlbL8ee-1QkGB8qVY1m0lFRgd-qIMqMM"
+    srh_safeguarding_ID = "1A_p3cb3KNgX8XxD9MlCIoa294Y4Pb9obUKfwIvERALY"
+
+    outputpath = "./output/"
+
+    default_expiration = 180
+    special_expiration = "./edits/expiration_times.json"
+
+    ab_testing_sheet_id = '1SDUUCbDL1-oW7b9pB2RqfM6HqB-jeLDAdT3Ng6e515I'
+    
+    select_phrases = ".\edits\select_phrases.json"
+    special_words = ".\edits\special_words.json"
+    count_threshold = "2"
+    length_threshold = "18"
+    qr_limit = "10"
+
+    sg_path = "./edits/safeguarding_srh.json"
+    sg_flow_name = "SRH - Safeguarding - WFR interaction"
+    sg_flow_id = "ecbd9a63-0139-4939-8b76-343543eccd94"
+
+    redirect_flow_names = (
+    '['
+    '    "SRH - Safeguarding - Redirect to topic"'
+    ']'
+)
+    
 
     sources = [
-    {"filename": "srh_registration", "spreadsheet_id": "1yett-Rfzb9Ou8IQ1kwtrKPN_auhM-lk66r9gkqNV1As"},
-    {"filename": "srh_entry", "spreadsheet_id": "19xvYfwWKA1hT5filGPWYEobQL1ZFfcFbTj1-aJCN8OQ"},
-    {"filename": "srh_content", "spreadsheet_id": "1hOlgdqjmXZgl51L1olt357Gfiw2zRHNEl98aYTf8Hwo"},
-    {"filename": "srh_safeguarding", "spreadsheet_id": "1A_p3cb3KNgX8XxD9MlCIoa294Y4Pb9obUKfwIvERALY"}
+        # {
+        #     "filename": "srh_registration",
+        #     "spreadsheet_ids": [
+        #         srh_registration_ID         
+        #     ],
+        #     "tags": [],
+        #     "outputlog": False
+        # },
+        {
+            "filename": "srh_entry",
+            "spreadsheet_ids": [
+                srh_entry_ID,
+                srh_safeguarding_ID         
+            ],
+            "tags": [],
+            "outputlog": False
+        },
+        {
+            "filename": "srh_content_menstruation_pregnancy_puberty",
+            "spreadsheet_ids": [
+                srh_content_ID         
+            ],
+            "tags": [3, "menstruation_pregnancy_puberty"],
+            "outputlog": False
+        },
+        {
+            "filename": "srh_content_stis",
+            "spreadsheet_ids": [
+                srh_content_ID         
+            ],
+            "tags": [3, "stis"],
+            "outputlog": False
+        },
+        {
+            "filename": "srh_content_contraceptives",
+            "spreadsheet_ids": [
+                srh_content_ID         
+            ],
+            "tags": [3, "contraceptives"],
+            "outputlog": False
+        },
+        {
+            "filename": "srh_content_gender_abstinence_mental_violence_relation",
+            "spreadsheet_ids": [
+                srh_content_ID         
+            ],
+            "tags": [3, "gender_abstinence_mental_violence_relation"],
+            "outputlog": False
+        }
     ]
 
     for source in sources:
 
         source_file_name = source["filename"]
-        spreadsheet_id  = source["spreadsheet_id"]
+        spreadsheet_ids = source["spreadsheet_ids"]
+        tags = source["tags"]
 
-        if not os.path.exists("./output/"):
-            os.makedirs("./output/")
+        print("Processing: "+source_file_name)
 
-        output_flow_path = "./output/" + source_file_name + ".json"
-        flow_converter.convert_flow("create_flows", spreadsheet_id, output_flow_path, "google_sheets", "models.srh_models", credentials, token)
+        if not os.path.exists(outputpath):
+            os.makedirs(outputpath)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            if source["outputlog"]:
+                logpath = "./log"
+                if not os.path.exists(logpath):
+                    os.makedirs(logpath)
+            else:
+                logpath = temp_dir
+
+            #####################################################################
+            # Step 1: Load google sheets and convert to RapidPro JSON
+            #####################################################################
+
+            output_path_1_1 = os.path.join(logpath, source_file_name + "_1_load_from_sheets.json")
+            flows = create_flows(
+                spreadsheet_ids,
+                None,
+                "google_sheets",
+                data_models="models.srh_models",
+                tags=tags,
+            )
+
+            with open(output_path_1_1, "w") as export:
+                json.dump(flows, export, indent=4)
+
+            input_path_2 = update_expiration_time(source, default_expiration, special_expiration, output_path_1_1, logpath)
+
+            print("  Step 1 complete, google sheets converted to JSON")
+
+            #####################################################################
+            # Step 2: Flow edits 
+            #####################################################################
+
+            ab_log_file_path = os.path.join(logpath, "2_ab_testing.log")
+
+            if ab_testing_sheet_id:
+            
+                output_path_2 = os.path.join(logpath, source_file_name + "_2_flow_edits.json")
+
+                input_sheets = [ab_testing_sheet_id]
+
+                apply_abtests(
+                    input_path_2,
+                    output_path_2,
+                    input_sheets,
+                    "google_sheets",
+                    ab_log_file_path,
+                )
+                
+                print("  Step 2 complete, added A/B tests and localization")
+            else:
+                output_path_2 = input_path_2
+                print("  Step 2 skipped, no AB testing sheet ID provided")
+
+            #####################################################################
+            # step 3: modify quick replies
+            #####################################################################
+
+            output_file_name_3 = source_file_name + "_3_QR_modified"
+            
+            run_node(
+                "idems_translation_chatbot/index.js",
+                "reformat_quick_replies",
+                output_path_2,
+                select_phrases,
+                output_file_name_3,
+                logpath,
+                count_threshold,
+                length_threshold,
+                qr_limit,
+                special_words,
+            )
+
+            print("  Step 3 complete, reformatted quick replies")
+
+            #####################################################################
+            # step 4: implement safeguarding
+            #####################################################################
+
+            input_path_4 = os.path.join(logpath, output_file_name_3 + ".json")
+            output_path_4 = os.path.join(logpath, source_file_name+"_4_safeguarding.json")
+
+            if (
+                sg_path
+                and sg_flow_name
+                and sg_flow_id
+            ):
+
+                run_node(
+                    "safeguarding-rapidpro/srh_add_safeguarding_to_flows.js",
+                    input_path_4,
+                    sg_path,
+                    output_path_4,
+                    sg_flow_id,
+                    sg_flow_name
+                    )
+
+                run_node(
+                    "safeguarding-rapidpro/v2_edit_redirect_flow.js",
+                    output_path_4,
+                    sg_path,
+                    output_path_4,
+                    redirect_flow_names
+                )
+
+                print(
+                    "  Step 4 complete, adding safeguarding flows and edited redirect flows"
+                )
+            else:
+                output_path_4 = input_path_4
+                print("  Step 4 skipped, no safeguarding details provided")
+
+            #####################################################################
+            # step 5: copy finished file to final localtion
+            #####################################################################
+
+            copy_file(output_path_4, outputpath, source_file_name+".json")
+
+            print("  " + source_file_name + " successfully processed, result stored in output folder") 
         
-        print("created " + source_file_name)
-        input_path = "./output/" + source_file_name + ".json"
 
-        # # step 2: flow edits & A/B testing
-        # SPREADSHEET_ID = "17q1mSyZU9Eu9-oHTE5zg20qrkkngfTlbgxjo2hOia_Q"
-        # JSON_FILENAME = "..\\srh-jamaica-chatbot\\flows\\" + source_file_name + ".json"
-        # source_file_name = source_file_name + "_avatar"
-        # CONFIG_ab = "..\\srh-jamaica-chatbot\\edits\\ab_config.json"
-        # output_path_2 = "temp\\" + source_file_name + ".json"
-        # AB_log = "..\\srh-jamaica-chatbot\\temp\\AB_warnings.log"
-        # os.chdir("..\\rapidpro_abtesting")
-        # subprocess.run(["python", "main.py", JSON_FILENAME, "..\\srh-jamaica-chatbot\\" + output_path_2, SPREADSHEET_ID, "--format", "google_sheets", "--logfile", AB_log, "--config=" + CONFIG_ab])
-        # print("added A/B tests and localisation")
-        # input_path = output_path_2
-        # os.chdir("..\\srh-jamaica-chatbot")
+def update_expiration_time(source, default_expiration, special_expiration, in_fp, outputpath):
+    with open(special_expiration, "r") as specifics_json:
+        specifics = json.load(specifics_json)
 
-        # step 4: add quick replies to message text and translation
-        source_file_name = source_file_name + "_no_QR"
-        select_phrases_file = "./edits/select_phrases.json"
-        special_words = "./edits/special_words.json"
-        add_selectors = "yes"
-        output_path_4 = "./output/"
-        output_name_4 = source_file_name
+    with open(in_fp, "r") as in_json:
+        org = json.load(in_json)
 
-        subprocess.run(["node", "./node_modules/@idems/idems_translation_chatbot/index.js", "move_quick_replies", input_path, select_phrases_file, output_name_4, output_path_4, add_selectors, special_words])
-        print("Removed quick replies")
+    for flow in org.get("flows", []):
+        set_expiration(flow, default_expiration, specifics)
 
-        # # step 5: safeguarding
-        sg_flow_uuid = "ecbd9a63-0139-4939-8b76-343543eccd94"
-        sg_flow_name = "SRH - Safeguarding - WFR interaction"
-        
-        input_path_5 = output_path_4 + output_name_4 + ".json"
-        source_file_name = f"{source_file_name}_safeguarding"
-        output_path_5 = f"./output/{source_file_name}.json"
-        safeguarding_path = "./edits/safeguarding_srh.json"
-        subprocess.run(["node", "./node_modules/@idems/safeguarding-rapidpro/srh_add_safeguarding_to_flows.js", input_path_5, safeguarding_path, output_path_5, sg_flow_uuid, sg_flow_name])
-        print("Added safeguarding")
+    out_fp = os.path.join(
+        outputpath,
+        source["filename"] + "_1_2_modified_expiration_times.json",
+    )
+    with open(out_fp, "w") as out_json:
+        json.dump(org, out_json)
 
-        if "srh_safeguarding" in source_file_name:
-            subprocess.run(["node", "./node_modules/@idems/safeguarding-rapidpro/srh_edit_redirect_flow.js", output_path_5, safeguarding_path, output_path_5])
-            print("Edited redirect sg flow")
+    return out_fp
 
-        # # step final: split in 2 json files because it's too heavy to load (need to replace wrong flow names)
-        if "srh_content" in source_file_name:
-            input_path_6 = output_path_5
-            n_file = 2
-            subprocess.run(["node", "./node_modules/@idems/idems-chatbot-tools/split_in_multiple_json_files.js", input_path_6, str(n_file)])
+def set_expiration(flow, default, specifics={}):
+    expiration = specifics.get(flow["name"], default)
 
-            print(f"Split file in {n_file}")
+    flow["expire_after_minutes"] = expiration
+
+    if "expires" in flow.get("metadata", {}):
+        flow["metadata"]["expires"] = expiration
+
+    return flow
+
+def run_node(script, *args):
+    subprocess.run(["node", "node_modules/@idems/" + script, *args])
+
+def copy_file(src_path, dest_dir, new_name=None):
+    try:
+        # Ensure the source file exists
+        if not os.path.exists(src_path):
+            raise FileNotFoundError(f"The source file '{src_path}' does not exist.")
+
+        # Create the destination directory if it doesn't exist
+        os.makedirs(dest_dir, exist_ok=True)
+
+        # Determine the new name of the file
+        if new_name is None:
+            new_name = os.path.basename(src_path)
+
+        # Construct the full destination path
+        dest_path = os.path.join(dest_dir, new_name)
+
+        # Copy the file
+        shutil.copy2(src_path, dest_path)
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == '__main__':
-    credentials = os.getenv('CREDENTIALS')
-    token = os.getenv('TOKEN')
-    main(credentials, token)
+    
+    srh_jamaica_pipeline()
 
