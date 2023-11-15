@@ -1,8 +1,8 @@
-from rapidpro_flow_tools.parsers.creation.datarowmodel import DataRowModel
-from rapidpro_flow_tools.parsers.common.rowparser import ParserModel
+from rpft.parsers.creation.datarowmodel import DataRowModel
+from rpft.parsers.common.rowparser import ParserModel
 from typing import List
 
-
+######################################################################
 
 class GenderAnswerModel(ParserModel):
 	question: str = ''

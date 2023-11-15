@@ -19,10 +19,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt  
 
-      - name: Run Python function
+      - name: Run pipeline
         env:
           CREDENTIALS: ${{ secrets.CREDENTIALS }}
-          TOKEN: ${{ secrets.TOKEN }}
         run: python srh_jamaica.py
 
       - name: Publish output folder
