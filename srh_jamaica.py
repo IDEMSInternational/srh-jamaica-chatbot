@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import shutil
 
+from parenttext_pipeline.importer import import_definition
 from rpft.converters import create_flows
 from rapidpro_abtesting.main import apply_abtests
 
@@ -209,13 +210,16 @@ def srh_jamaica_pipeline():
             # step 5: copy finished file to final localtion
             #####################################################################
 
-            copy_file(output_path_4, outputpath, source_file_name + ".json")
+            final_file_name = source_file_name + ".json"
+            copy_file(output_path_4, outputpath, final_file_name)
 
             print(
                 "  "
                 + source_file_name
                 + " successfully processed, result stored in output folder"
             )
+
+            import_into_rapidpro(os.path.join(outputpath, final_file_name))
 
 
 def update_expiration_time(
@@ -276,6 +280,18 @@ def copy_file(src_path, dest_dir, new_name=None):
 
     except Exception as e:
         print(f"Error: {e}")
+
+
+def import_into_rapidpro(flow_definition):
+    if os.getenv("RP_IMPORT"):
+        import_definition(
+            os.getenv("RP_HOST"),
+            os.getenv("RP_USER"),
+            os.getenv("RP_PASS"),
+            flow_definition
+        )
+    else:
+        print("Import to RapidPro skipped, ", {"file": flow_definition})
 
 
 if __name__ == "__main__":
