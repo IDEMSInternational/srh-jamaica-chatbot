@@ -15,7 +15,7 @@ def srh_jamaica_pipeline():
     srh_content_ID = "1Tcg02_EW3GltlbL8ee-1QkGB8qVY1m0lFRgd-qIMqMM"
     srh_safeguarding_ID = "1A_p3cb3KNgX8XxD9MlCIoa294Y4Pb9obUKfwIvERALY"
 
-    outputpath = "./output/"
+    outputpath = "output"
 
     default_expiration = 180
     special_expiration = "./edits/expiration_times.json"
@@ -288,7 +288,7 @@ def import_into_rapidpro(flow_definition):
             os.getenv("RP_HOST"),
             os.getenv("RP_USER"),
             os.getenv("RP_PASS"),
-            flow_definition
+            [flow_definition]
         )
     else:
         print("Import to RapidPro skipped, ", {"file": flow_definition})
