@@ -1,6 +1,12 @@
-name: Produce RapidPro Flows
+name: Produce RapidPro flows
 on:
   workflow_dispatch:
+    inputs:
+      rp_import:
+        description: Import flows into RapidPro
+        type: boolean
+        required: false
+        default: false
 
 jobs:
 
@@ -9,23 +15,27 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install node dependencies
+      - name: Install Node dependencies
         run: npm ci
 
-      - name: Install python dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  
+          pip install -r requirements.txt
 
       - name: Run pipeline
         env:
           CREDENTIALS: ${{ secrets.CREDENTIALS }}
+          RP_HOST: ${{ vars.RP_HOST }}
+          RP_IMPORT: ${{ inputs.rp_import }}
+          RP_PASS: ${{ secrets.RP_PASS }}
+          RP_USER: ${{ secrets.RP_USER }}
         run: python srh_jamaica.py
 
       - name: Publish output folder
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Output Files
           path: output

@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import shutil
 
+from parenttext_pipeline.importer import import_definition
 from rpft.converters import create_flows
 from rapidpro_abtesting.main import apply_abtests
 
@@ -14,7 +15,7 @@ def srh_jamaica_pipeline():
     srh_content_ID = "1Tcg02_EW3GltlbL8ee-1QkGB8qVY1m0lFRgd-qIMqMM"
     srh_safeguarding_ID = "1A_p3cb3KNgX8XxD9MlCIoa294Y4Pb9obUKfwIvERALY"
 
-    outputpath = "./output/"
+    outputpath = "output"
 
     default_expiration = 180
     special_expiration = "./edits/expiration_times.json"
@@ -209,13 +210,16 @@ def srh_jamaica_pipeline():
             # step 5: copy finished file to final localtion
             #####################################################################
 
-            copy_file(output_path_4, outputpath, source_file_name + ".json")
+            final_file_name = source_file_name + ".json"
+            copy_file(output_path_4, outputpath, final_file_name)
 
             print(
                 "  "
                 + source_file_name
                 + " successfully processed, result stored in output folder"
             )
+
+    import_into_rapidpro(outputpath, sources)
 
 
 def update_expiration_time(
@@ -276,6 +280,21 @@ def copy_file(src_path, dest_dir, new_name=None):
 
     except Exception as e:
         print(f"Error: {e}")
+
+
+def import_into_rapidpro(output_dir, sources):
+    if os.getenv("RP_IMPORT"):
+        import_definition(
+            os.getenv("RP_HOST"),
+            os.getenv("RP_USER"),
+            os.getenv("RP_PASS"),
+            [
+                os.path.join(output_dir, source["filename"] + ".json")
+                for source in sources
+            ],
+        )
+    else:
+        print("Import to RapidPro skipped, ", {"file": flow_definition})
 
 
 if __name__ == "__main__":

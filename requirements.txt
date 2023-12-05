@@ -1,9 +1,1 @@
-Jinja2~=3.0.3
-networkx~=2.5.1
-pydantic~=1.8.2
-tablib[ods]>=3.1.0
-openpyxl~=3.0.7
-google-api-python-client~=2.6.0
-google-auth-oauthlib~=0.4.4
-rpft@https://github.com/IDEMSInternational/rapidpro-flow-toolkit/archive/refs/heads/main.tar.gz
-rapidpro-abtesting@https://github.com/IDEMSInternational/rapidpro_abtesting/archive/refs/heads/master.tar.gz
+parenttext_pipeline@https://github.com/IDEMSInternational/parenttext-pipeline/archive/refs/heads/main.tar.gz
