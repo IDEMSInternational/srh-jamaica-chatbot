@@ -219,7 +219,7 @@ def srh_jamaica_pipeline():
                 + " successfully processed, result stored in output folder"
             )
 
-            import_into_rapidpro(os.path.join(outputpath, final_file_name))
+    import_into_rapidpro(outputpath, sources)
 
 
 def update_expiration_time(
@@ -282,13 +282,16 @@ def copy_file(src_path, dest_dir, new_name=None):
         print(f"Error: {e}")
 
 
-def import_into_rapidpro(flow_definition):
+def import_into_rapidpro(output_dir, sources):
     if os.getenv("RP_IMPORT"):
         import_definition(
             os.getenv("RP_HOST"),
             os.getenv("RP_USER"),
             os.getenv("RP_PASS"),
-            [flow_definition]
+            [
+                os.path.join(output_dir, source["filename"] + ".json")
+                for source in sources
+            ],
         )
     else:
         print("Import to RapidPro skipped, ", {"file": flow_definition})
