@@ -283,7 +283,7 @@ def copy_file(src_path, dest_dir, new_name=None):
 
 
 def import_into_rapidpro(output_dir, sources):
-    if os.getenv("RP_IMPORT"):
+    if os.getenv("RP_IMPORT") == "true":
         import_definition(
             os.getenv("RP_HOST"),
             os.getenv("RP_USER"),
@@ -294,7 +294,7 @@ def import_into_rapidpro(output_dir, sources):
             ],
         )
     else:
-        print("Import to RapidPro skipped, ", {"file": flow_definition})
+        print("Import to RapidPro skipped")
 
 
 if __name__ == "__main__":
